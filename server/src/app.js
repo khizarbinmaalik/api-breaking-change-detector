@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { clientUrl } from './config/env.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
+import passport from './config/passport.js';
 
 const app = express();
 
@@ -11,6 +12,7 @@ app.use(helmet());
 app.use(cors({ origin: clientUrl, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
+app.use(passport.initialize());
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 

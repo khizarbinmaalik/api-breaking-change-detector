@@ -1,6 +1,13 @@
 import 'dotenv/config';
 
-const required = ['MONGO_URI', 'JWT_SECRET', 'ENCRYPTION_KEY'];
+const required = [
+  'MONGO_URI',
+  'JWT_SECRET',
+  'ENCRYPTION_KEY',
+  'GITHUB_CLIENT_ID',
+  'GITHUB_CLIENT_SECRET',
+  'GITHUB_CALLBACK_URL',
+];
 
 const missing = required.filter((key) => !process.env[key]);
 if (missing.length) {
@@ -20,3 +27,11 @@ export const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
 export const mongoUri = process.env.MONGO_URI;
 export const jwtSecret = process.env.JWT_SECRET;
 export const encryptionKey = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
+
+export const github = {
+  clientId: process.env.GITHUB_CLIENT_ID,
+  clientSecret: process.env.GITHUB_CLIENT_SECRET,
+  callbackUrl: process.env.GITHUB_CALLBACK_URL,
+  // 'repo' lets us list the user's repositories and create webhooks (Phase 2)
+  scope: ['read:user', 'user:email', 'repo'],
+};
