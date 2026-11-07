@@ -1,26 +1,21 @@
-import { useAuth } from "./context/AuthContext";
+import { Routes, Route, Navigate } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
 
 export default function App() {
-  const { user, loading, logout } = useAuth();
-
-  if (loading) return <p>Loading...</p>;
-
   return (
-    <div style={{ padding: "2rem" }}>
-      <h1>API Guard</h1>
-      {user ? (
-        <>
-          <p>
-            Logged in as <strong>{user.username}</strong>
-          </p>
-          <button onClick={logout}>Log out</button>
-        </>
-      ) : (
-        <>
-          <p>Not logged in</p>
-          <a href="/api/auth/github">Continue with GitHub</a>
-        </>
-      )}
-    </div>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
   );
 }

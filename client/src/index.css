@@ -1,0 +1,73 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    sans-serif;
+  background: #f5f7fa;
+  color: #1c2430;
+}
+.center {
+  text-align: center;
+  margin-top: 4rem;
+}
+.center-card {
+  max-width: 380px;
+  margin: 12vh auto;
+  text-align: center;
+}
+.card {
+  background: #fff;
+  border: 1px solid #e1e6ee;
+  border-radius: 12px;
+  padding: 2rem;
+}
+.btn {
+  display: inline-block;
+  background: #1f4e79;
+  color: #fff;
+  border: 0;
+  padding: 0.65rem 1.2rem;
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+.btn.secondary {
+  background: #e8edf4;
+  color: #1c2430;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
+}
+.error {
+  color: #b3261e;
+}
+.muted {
+  color: #667085;
+}
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 1.5rem;
+  background: #fff;
+  border-bottom: 1px solid #e1e6ee;
+}
+.user {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.user img {
+  border-radius: 50%;
+}
+main {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+}
