@@ -7,6 +7,7 @@ import { notFound, errorHandler } from "./middleware/errorHandler.js";
 import passport from "./config/passport.js";
 import authRoutes from "./routes/auth.js";
 import githubRoutes from './routes/github.js';
+import repoRoutes from './routes/repos.js';
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(passport.initialize());
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 app.use("/api/auth", authRoutes);
 app.use('/api/github', githubRoutes);
+app.use('/api/repos', repoRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
