@@ -71,3 +71,66 @@ main {
   margin: 2rem auto;
   padding: 0 1.5rem;
 }
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.picker {
+  margin-bottom: 1.5rem;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 1rem;
+}
+.field label {
+  font-size: 0.9rem;
+  color: #667085;
+}
+.field input {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cfd6e0;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+.repo-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.repo-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  background: #fff;
+  border: 1px solid #e1e6ee;
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+}
+.picker .repo-list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+.badge {
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  background: #e8edf4;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  color: #475467;
+}
+.small {
+  font-size: 0.85rem;
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

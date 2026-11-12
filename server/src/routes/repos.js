@@ -2,6 +2,7 @@ import express from 'express';
 import requireAuth from '../middleware/requireAuth.js';
 import Repository from '../models/Repository.js';
 import { getOctokitForUser } from '../services/github.js';
+import mongoose from 'mongoose';
 
 const router = express.Router();
 
@@ -78,5 +79,36 @@ router.post('/', async (req, res, next) => {
     next(err);
   }
 });
+
+// GET /api/repos: the repositories this user has connected
+router.get('/', async (req, res, next) => {
+  try {
+    const repos = await Repository.find({ user: req.user._id }).sort({ createdAt: -1 });
+    res.json(repos);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/repos/:id: disconnect a repository
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.isObjectIdOrHexString(id)) {
+      return res.status(400).json({ message: 'Invalid repository id' });
+    }
+
+    // Filtering by user means you can only ever delete your own connections
+    const deleted = await Repository.findOneAndDelete({ _id: id, user: req.user._id });
+    if (!deleted) {
+      return res.status(404).json({ message: 'Repository not found' });
+    }
+
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
+
 
 export default router;
