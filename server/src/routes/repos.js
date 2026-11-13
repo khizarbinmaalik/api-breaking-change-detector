@@ -3,6 +3,8 @@ import requireAuth from '../middleware/requireAuth.js';
 import Repository from '../models/Repository.js';
 import { getOctokitForUser } from '../services/github.js';
 import mongoose from 'mongoose';
+import SpecSnapshot from '../models/SpecSnapshot.js';
+import { createSnapshot } from '../services/snapshots.js';
 
 const router = express.Router();
 
@@ -105,6 +107,54 @@ router.delete('/:id', async (req, res, next) => {
     }
 
     res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Loads a repo by the :id in the URL, but only if it belongs to the logged-in user.
+// If something is wrong it sends the error response itself and returns null.
+async function findOwnedRepo(req, res) {
+  const { id } = req.params;
+  if (!mongoose.isObjectIdOrHexString(id)) {
+    res.status(400).json({ message: 'Invalid repository id' });
+    return null;
+  }
+  const repo = await Repository.findOne({ _id: id, user: req.user._id });
+  if (!repo) res.status(404).json({ message: 'Repository not found' });
+  return repo;
+}
+
+// POST /api/repos/:id/snapshots   body: { ref? }  (a branch, tag or commit SHA; default: the default branch)
+router.post('/:id/snapshots', async (req, res, next) => {
+  try {
+    const repo = await findOwnedRepo(req, res);
+    if (!repo) return;
+
+    const ref = typeof req.body?.ref === 'string' ? req.body.ref.trim() : undefined;
+    const { snapshot, created } = await createSnapshot(repo, ref || undefined);
+
+    // Don't send the whole spec text back, just a summary
+    const { rawSpec, ...summary } = snapshot.toObject();
+    res.status(created ? 201 : 200).json({ ...summary, specLength: rawSpec.length, created });
+  } catch (err) {
+    if (err.status === 401) {
+      return res.status(401).json({ message: 'GitHub access expired. Please log in again.' });
+    }
+    next(err);
+  }
+});
+
+// GET /api/repos/:id/snapshots: saved versions of the spec, newest first
+router.get('/:id/snapshots', async (req, res, next) => {
+  try {
+    const repo = await findOwnedRepo(req, res);
+    if (!repo) return;
+
+    const snapshots = await SpecSnapshot.find({ repo: repo._id })
+      .select('-rawSpec -parsedEndpoints')
+      .sort({ createdAt: -1 });
+    res.json(snapshots);
   } catch (err) {
     next(err);
   }
