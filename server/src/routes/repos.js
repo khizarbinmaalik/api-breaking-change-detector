@@ -1,10 +1,11 @@
 import express from 'express';
 import requireAuth from '../middleware/requireAuth.js';
 import Repository from '../models/Repository.js';
-import { getOctokitForUser } from '../services/github.js';
+import { getOctokitForUser, createRepoWebhook } from '../services/github.js';
 import mongoose from 'mongoose';
 import SpecSnapshot from '../models/SpecSnapshot.js';
 import { createSnapshot } from '../services/snapshots.js';
+import { encrypt } from '../utils/crypto.js';
 
 const router = express.Router();
 
@@ -70,7 +71,32 @@ router.post('/', async (req, res, next) => {
       specFilePath,
     });
 
-    res.status(201).json(saved);
+    // 4. Register the webhook on GitHub. If this fails, undo the save.
+    try {
+      const { webhookId, secret } = await createRepoWebhook(octokit, saved.owner, saved.name);
+      saved.webhookId = webhookId;
+      saved.webhookSecret = encrypt(secret);
+      await saved.save();
+    } catch (err) {
+      await Repository.findByIdAndDelete(saved._id);
+      if (err.status === 404 || err.status === 403) {
+        return res.status(403).json({
+          message: 'Could not create a webhook. You need admin access to this repository.',
+        });
+      }
+      if (err.status === 422) {
+        return res.status(409).json({
+          message:
+            'A webhook for this server already exists on the repository. Delete it in GitHub (Settings > Webhooks) and try again.',
+        });
+      }
+      throw err;
+    }
+
+    // 5. Never send the stored secret back to the browser
+    const result = saved.toObject();
+    delete result.webhookSecret;
+    res.status(201).json(result);
   } catch (err) {
     if (err.code === 11000) {
       return res.status(409).json({ message: 'This repository is already connected' });

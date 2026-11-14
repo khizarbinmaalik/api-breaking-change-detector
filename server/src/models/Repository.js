@@ -9,9 +9,10 @@ const repositorySchema = new mongoose.Schema(
     fullName: { type: String, required: true }, // "owner/name"
     defaultBranch: { type: String, default: 'main' },
     specFilePath: { type: String, default: 'openapi.yaml' },
-    webhookId: Number,
+    webhookId: { type: Number, default: null }, 
+
     // Used to verify that incoming webhooks really come from GitHub. Stored encrypted.
-    webhookSecret: { type: String, select: false },
+    webhookSecret: { type: String, select: false, default: null },
   },
   { timestamps: true }
 );

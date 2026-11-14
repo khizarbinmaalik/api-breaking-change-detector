@@ -27,6 +27,7 @@ export const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
 export const mongoUri = process.env.MONGO_URI;
 export const jwtSecret = process.env.JWT_SECRET;
 export const encryptionKey = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
+export const webhookBaseUrl = process.env.WEBHOOK_BASE_URL;
 
 export const github = {
   clientId: process.env.GITHUB_CLIENT_ID,
