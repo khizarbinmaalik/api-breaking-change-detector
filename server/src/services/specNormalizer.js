@@ -4,7 +4,7 @@ const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 const byJson = (a, b) => cmp(JSON.stringify(a), JSON.stringify(b));
 
 // Constraints that can make a schema stricter or looser
-const SIMPLE_KEYS = [
+export const SIMPLE_KEYS = [
   'format', 'nullable', 'pattern', 'minimum', 'maximum', 'exclusiveMinimum',
   'exclusiveMaximum', 'minLength', 'maxLength', 'minItems', 'maxItems',
   'readOnly', 'writeOnly',

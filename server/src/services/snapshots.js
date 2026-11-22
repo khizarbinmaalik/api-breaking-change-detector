@@ -1,5 +1,6 @@
 import SpecSnapshot from '../models/SpecSnapshot.js';
 import { getOctokitForUser } from './github.js';
+import { normalizeSpec } from './specNormalizer.js';
 
 function httpError(status, message) {
   const err = new Error(message);
@@ -50,6 +51,23 @@ export async function createSnapshot(repo, ref) {
   }
   if (typeof rawSpec !== 'string') rawSpec = Buffer.from(rawSpec).toString('utf8');
 
-  const snapshot = await SpecSnapshot.create({ repo: repo._id, commitSha: commit.sha, rawSpec });
+  // 4. Turn the spec into the normalized endpoint list used by the diff engine.
+  //    A broken spec is still saved, with the reason, so the commit is not lost.
+  let parsedEndpoints = [];
+  let parseError = null;
+  try {
+    parsedEndpoints = normalizeSpec(rawSpec);
+  } catch (err) {
+    if (err.status !== 422) throw err; // 422 = "the file's content is unusable"; anything else is a real bug
+    parseError = err.message;
+  }
+
+  const snapshot = await SpecSnapshot.create({
+    repo: repo._id,
+    commitSha: commit.sha,
+    rawSpec,
+    parsedEndpoints,
+    parseError,
+  });
   return { snapshot, created: true };
 }
