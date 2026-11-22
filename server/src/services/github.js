@@ -35,3 +35,12 @@ export async function createRepoWebhook(octokit, owner, repoName) {
   // The caller encrypts the secret before saving it
   return { webhookId: data.id, secret };
 }
+
+export async function deleteRepoWebhook(octokit, owner, repoName, hookId) {
+  try {
+    await octokit.rest.repos.deleteWebhook({ owner, repo: repoName, hook_id: hookId });
+  } catch (err) {
+    if (err.status === 404) return; // already gone, nothing to do
+    throw err;
+  }
+}

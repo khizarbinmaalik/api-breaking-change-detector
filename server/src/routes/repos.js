@@ -1,7 +1,9 @@
 import express from 'express';
 import requireAuth from '../middleware/requireAuth.js';
 import Repository from '../models/Repository.js';
-import { getOctokitForUser, createRepoWebhook } from '../services/github.js';
+import Diff from '../models/Diff.js';
+import Changelog from '../models/Changelog.js';
+import { getOctokitForUser, createRepoWebhook, deleteRepoWebhook} from '../services/github.js';
 import mongoose from 'mongoose';
 import SpecSnapshot from '../models/SpecSnapshot.js';
 import { createSnapshot } from '../services/snapshots.js';
@@ -121,18 +123,32 @@ router.get('/', async (req, res, next) => {
 // DELETE /api/repos/:id: disconnect a repository
 router.delete('/:id', async (req, res, next) => {
   try {
-    const { id } = req.params;
-    if (!mongoose.isObjectIdOrHexString(id)) {
-      return res.status(400).json({ message: 'Invalid repository id' });
+    const repo = await Repository.findOne({ _id: req.params.id, user: req.user._id });
+    if (!repo) return res.status(404).json({ message: 'Repository not found' });
+
+    // 1. Remove the GitHub webhook (best effort: never block the disconnect)
+    let webhookRemoved = true;
+    if (repo.webhookId) {
+      try {
+        const octokit = await getOctokitForUser(req.user._id);
+        await deleteRepoWebhook(octokit, repo.owner, repo.name, repo.webhookId);
+      } catch (err) {
+        webhookRemoved = false;
+        console.error(`[disconnect] could not remove webhook for ${repo.fullName}:`, err.message);
+      }
     }
 
-    // Filtering by user means you can only ever delete your own connections
-    const deleted = await Repository.findOneAndDelete({ _id: id, user: req.user._id });
-    if (!deleted) {
-      return res.status(404).json({ message: 'Repository not found' });
-    }
+    // 2. Delete everything that belongs to this repo
+    await Promise.all([
+      SpecSnapshot.deleteMany({ repo: repo._id }),
+      Diff.deleteMany({ repo: repo._id }),
+      Changelog.deleteMany({ repo: repo._id }),
+    ]);
 
-    res.status(204).end();
+    // 3. Delete the repo record last, so a failure above can be retried
+    await repo.deleteOne();
+
+    res.json({ message: 'Repository disconnected', webhookRemoved });
   } catch (err) {
     next(err);
   }
