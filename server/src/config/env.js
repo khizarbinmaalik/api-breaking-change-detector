@@ -28,6 +28,8 @@ export const mongoUri = process.env.MONGO_URI;
 export const jwtSecret = process.env.JWT_SECRET;
 export const encryptionKey = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
 export const webhookBaseUrl = process.env.WEBHOOK_BASE_URL;
+export const geminiApiKey = process.env.GEMINI_API_KEY;
+export const geminiModel = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite';
 
 export const github = {
   clientId: process.env.GITHUB_CLIENT_ID,
