@@ -1,29 +1,19 @@
 import mongoose from 'mongoose';
 
-const changeSchema = new mongoose.Schema(
-  {
-    endpoint: { type: String, required: true }, // e.g. "/users/{id}"
-    method: { type: String, required: true }, // e.g. "GET"
-    location: { type: String, enum: ['endpoint', 'parameter', 'response'], required: true },
-    field: String, // the parameter or field name affected, if any
-    changeType: {
-      type: String,
-      enum: ['added', 'removed', 'type_changed', 'required_changed'],
-      required: true,
-    },
-    severity: { type: String, enum: ['breaking', 'safe'], required: true },
-    description: { type: String, required: true },
-  },
-  { _id: false }
-);
-
 const diffSchema = new mongoose.Schema(
   {
     repo: { type: mongoose.Schema.Types.ObjectId, ref: 'Repository', required: true, index: true },
     fromSnapshot: { type: mongoose.Schema.Types.ObjectId, ref: 'SpecSnapshot', required: true },
-    toSnapshot: { type: mongoose.Schema.Types.ObjectId, ref: 'SpecSnapshot', required: true },
-    changes: { type: [changeSchema], default: [] },
-    overallSeverity: { type: String, enum: ['breaking', 'safe'], required: true },
+    toSnapshot: { type: mongoose.Schema.Types.ObjectId, ref: 'SpecSnapshot', required: true, unique: true },
+    fromCommitSha: { type: String, required: true }, // copied here so the list can show them without extra queries
+    toCommitSha: { type: String, required: true },
+    changes: { type: mongoose.Schema.Types.Mixed, default: [] }, // classified change records
+    summary: {
+      total: { type: Number, default: 0 },
+      breaking: { type: Number, default: 0 },
+      safe: { type: Number, default: 0 },
+    },
+    hasBreaking: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

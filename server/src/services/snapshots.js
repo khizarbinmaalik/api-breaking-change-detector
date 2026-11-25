@@ -1,6 +1,7 @@
-import SpecSnapshot from '../models/SpecSnapshot.js';
-import { getOctokitForUser } from './github.js';
-import { normalizeSpec } from './specNormalizer.js';
+import SpecSnapshot from "../models/SpecSnapshot.js";
+import { getOctokitForUser } from "./github.js";
+import { normalizeSpec } from "./specNormalizer.js";
+import { createDiffForSnapshot } from "./diffs.js";
 
 function httpError(status, message) {
   const err = new Error(message);
@@ -30,7 +31,10 @@ export async function createSnapshot(repo, ref) {
   }
 
   // 2. Already saved? Then there is nothing to do (GitHub can deliver a webhook twice)
-  const existing = await SpecSnapshot.findOne({ repo: repo._id, commitSha: commit.sha });
+  const existing = await SpecSnapshot.findOne({
+    repo: repo._id,
+    commitSha: commit.sha,
+  });
   if (existing) return { snapshot: existing, created: false };
 
   // 3. Download the spec file exactly as it was at that commit
@@ -41,15 +45,19 @@ export async function createSnapshot(repo, ref) {
       repo: repo.name,
       path: repo.specFilePath,
       ref: commit.sha,
-      mediaType: { format: 'raw' }, // ask for the file's text directly instead of base64
+      mediaType: { format: "raw" }, // ask for the file's text directly instead of base64
     }));
   } catch (err) {
     if (err.status === 404) {
-      throw httpError(404, `${repo.specFilePath} does not exist at commit ${commit.sha.slice(0, 7)}`);
+      throw httpError(
+        404,
+        `${repo.specFilePath} does not exist at commit ${commit.sha.slice(0, 7)}`,
+      );
     }
     throw err;
   }
-  if (typeof rawSpec !== 'string') rawSpec = Buffer.from(rawSpec).toString('utf8');
+  if (typeof rawSpec !== "string")
+    rawSpec = Buffer.from(rawSpec).toString("utf8");
 
   // 4. Turn the spec into the normalized endpoint list used by the diff engine.
   //    A broken spec is still saved, with the reason, so the commit is not lost.
@@ -69,5 +77,17 @@ export async function createSnapshot(repo, ref) {
     parsedEndpoints,
     parseError,
   });
-  return { snapshot, created: true };
+
+  // 5. Compare with the previous snapshot. A failure here must not lose the snapshot we just saved.
+  let diff = null;
+  try {
+    diff = await createDiffForSnapshot(snapshot);
+  } catch (err) {
+    console.error(
+      `[diff] could not create diff for ${repo.fullName}:`,
+      err.message,
+    );
+  }
+
+  return { snapshot, created: true, diff };
 }
