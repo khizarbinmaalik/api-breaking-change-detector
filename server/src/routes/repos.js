@@ -202,5 +202,34 @@ router.get('/:id/snapshots', async (req, res, next) => {
   }
 });
 
+// List of diffs for a repo (newest first), without the full change lists
+router.get('/:id/diffs', async (req, res, next) => {
+  try {
+    const repo = await Repository.findOne({ _id: req.params.id, user: req.user._id });
+    if (!repo) return res.status(404).json({ message: 'Repository not found' });
+
+    const diffs = await Diff.find({ repo: repo._id })
+      .select('-changes')
+      .sort({ createdAt: -1 })
+      .limit(50);
+    res.json(diffs);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// One diff in full, including every change
+router.get('/:id/diffs/:diffId', async (req, res, next) => {
+  try {
+    const repo = await Repository.findOne({ _id: req.params.id, user: req.user._id });
+    if (!repo) return res.status(404).json({ message: 'Repository not found' });
+
+    const diff = await Diff.findOne({ _id: req.params.diffId, repo: repo._id });
+    if (!diff) return res.status(404).json({ message: 'Diff not found' });
+    res.json(diff);
+  } catch (err) {
+    next(err);
+  }
+});
 
 export default router;
