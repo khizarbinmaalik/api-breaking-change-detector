@@ -1,8 +1,10 @@
-import SpecSnapshot from '../models/SpecSnapshot.js';
-import Diff from '../models/Diff.js';
-import { normalizeSpec } from './specNormalizer.js';
-import { diffEndpoints } from './specDiff.js';
-import { classifyChanges, summarize } from './classifier.js';
+import SpecSnapshot from "../models/SpecSnapshot.js";
+import Diff from "../models/Diff.js";
+import { normalizeSpec } from "./specNormalizer.js";
+import { diffEndpoints } from "./specDiff.js";
+import { classifyChanges, summarize } from "./classifier.js";
+import Changelog from "../models/Changelog.js";
+import { generateChangelog } from "./changelog.js";
 
 // Snapshots saved before step 28 have no parsed endpoints, so parse them on the fly
 function endpointsOf(snapshot) {
@@ -51,6 +53,32 @@ export async function createDiffForSnapshot(snapshot) {
     });
   } catch (err) {
     if (err.code === 11000) return Diff.findOne({ toSnapshot: snapshot._id }); // someone else just saved it
+    throw err;
+  }
+}
+
+// Generates and saves the changelog for a diff (does nothing if it already has one)
+export async function createChangelogForDiff(diff) {
+  const existing = await Changelog.findOne({ diff: diff._id });
+  if (existing) return existing;
+
+  const result = await generateChangelog({
+    changes: diff.changes,
+    summary: diff.summary,
+    fromCommitSha: diff.fromCommitSha,
+    toCommitSha: diff.toCommitSha,
+  });
+
+  try {
+    return await Changelog.create({
+      repo: diff.repo,
+      diff: diff._id,
+      text: result.text,
+      source: result.source,
+      note: result.note ?? null,
+    });
+  } catch (err) {
+    if (err.code === 11000) return Changelog.findOne({ diff: diff._id }); // saved by someone else a moment ago
     throw err;
   }
 }

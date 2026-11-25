@@ -1,7 +1,7 @@
 import SpecSnapshot from "../models/SpecSnapshot.js";
 import { getOctokitForUser } from "./github.js";
 import { normalizeSpec } from "./specNormalizer.js";
-import { createDiffForSnapshot } from "./diffs.js";
+import { createDiffForSnapshot, createChangelogForDiff } from "./diffs.js";
 
 function httpError(status, message) {
   const err = new Error(message);
@@ -82,6 +82,14 @@ export async function createSnapshot(repo, ref) {
   let diff = null;
   try {
     diff = await createDiffForSnapshot(snapshot);
+    if (diff) {
+      createChangelogForDiff(diff).catch((err) =>
+        console.error(
+          `[changelog] could not create changelog for ${repo.fullName}:`,
+          err.message,
+        ),
+      );
+    }
   } catch (err) {
     console.error(
       `[diff] could not create diff for ${repo.fullName}:`,
