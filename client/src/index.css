@@ -156,3 +156,31 @@ main {
   opacity: 0.6;
   cursor: not-allowed;
 }
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  margin: 1rem 0 0.5rem;
+}
+.markdown ul {
+  padding-left: 1.25rem;
+}
+.markdown code {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0 0.25rem;
+  border-radius: 4px;
+}
+.table-wrap {
+  overflow-x: auto;
+}
+table.changes {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+table.changes th,
+table.changes td {
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  vertical-align: top;
+}
