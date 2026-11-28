@@ -127,6 +127,28 @@ main {
   padding: 0.1rem 0.5rem;
   color: #475467;
 }
+.badge-breaking {
+  background: #fde8e8;
+  color: #b42318;
+}
+.badge-safe {
+  background: #e6f4ea;
+  color: #1e7b34;
+}
+.diff-item {
+  text-decoration: none;
+  color: inherit;
+}
+.diff-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+.link {
+  color: inherit;
+  text-decoration: none;
+}
+.link:hover {
+  text-decoration: underline;
+}
 .small {
   font-size: 0.85rem;
 }

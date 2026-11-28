@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import RepoPicker from '../components/RepoPicker';
+import { Link } from 'react-router-dom';
+import Topbar from '../components/Topbar';
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
   const [repos, setRepos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -35,17 +36,7 @@ export default function Dashboard() {
 
   return (
     <div className="page">
-      <header className="topbar">
-        <strong>API Guard</strong>
-        <div className="user">
-          <img src={user.avatarUrl} alt="" width="28" height="28" />
-          <span>{user.username}</span>
-          <button className="btn secondary" onClick={logout}>
-            Log out
-          </button>
-        </div>
-      </header>
-
+      <Topbar/>
       <main>
         <div className="section-head">
           <h2>Connected repositories</h2>
@@ -69,7 +60,9 @@ export default function Dashboard() {
             {repos.map((repo) => (
               <li key={repo._id} className="repo-item">
                 <div>
-                  <strong>{repo.fullName}</strong>
+                  <Link to={`/repos/${repo._id}/diffs`} className="link">
+                    <strong>{repo.fullName}</strong>
+                  </Link>
                   <div className="muted small">
                     Spec: {repo.specFilePath} on {repo.defaultBranch}
                   </div>
