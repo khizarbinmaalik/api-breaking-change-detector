@@ -8,6 +8,7 @@ import mongoose from 'mongoose';
 import SpecSnapshot from '../models/SpecSnapshot.js';
 import { createSnapshot } from '../services/snapshots.js';
 import { encrypt } from '../utils/crypto.js';
+import { createChangelogForDiff } from '../services/diffs.js';
 
 const router = express.Router();
 
@@ -218,15 +219,43 @@ router.get('/:id/diffs', async (req, res, next) => {
   }
 });
 
-// One diff in full, including every change
+// Finds a diff, but only if its repo belongs to the logged-in user
+async function findOwnedDiff(req) {
+  const repo = await Repository.findOne({ _id: req.params.id, user: req.user._id });
+  if (!repo) return null;
+  return Diff.findOne({ _id: req.params.diffId, repo: repo._id }).lean();
+}
+
+const changelogView = (c) => ({ text: c.text, source: c.source, note: c.note, createdAt: c.createdAt });
+
+// One diff in full, together with its changelog
 router.get('/:id/diffs/:diffId', async (req, res, next) => {
   try {
-    const repo = await Repository.findOne({ _id: req.params.id, user: req.user._id });
-    if (!repo) return res.status(404).json({ message: 'Repository not found' });
-
-    const diff = await Diff.findOne({ _id: req.params.diffId, repo: repo._id });
+    const diff = await findOwnedDiff(req);
     if (!diff) return res.status(404).json({ message: 'Diff not found' });
-    res.json(diff);
+
+    // Returns the saved changelog, or creates it now if this diff does not have one yet
+    const changelog = await createChangelogForDiff(diff);
+    res.json({ ...diff, changelog: changelogView(changelog) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Try again to get an AI-written changelog (only when the current one is the plain template)
+router.post('/:id/diffs/:diffId/changelog/regenerate', async (req, res, next) => {
+  try {
+    const diff = await findOwnedDiff(req);
+    if (!diff) return res.status(404).json({ message: 'Diff not found' });
+
+    const current = await Changelog.findOne({ diff: diff._id });
+    if (current && current.source === 'gemini') {
+      return res.status(409).json({ message: 'This changelog was already written by the AI' });
+    }
+    if (current) await current.deleteOne();
+
+    const changelog = await createChangelogForDiff(diff);
+    res.json(changelogView(changelog));
   } catch (err) {
     next(err);
   }
